@@ -1,10 +1,12 @@
 import {
+  Alert,
   Button,
   FormControl,
   Grid,
   InputLabel,
   MenuItem,
   Select,
+  Snackbar,
   TextField,
   Typography,
 } from "@mui/material";
@@ -18,24 +20,31 @@ function App() {
   const [downPayment, setDownPayment] = useState("0");
   const [annualInterestRate, setAnnualInterestRate] = useState("0");
   const [payment, setPayment] = useState(0.0);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleChange = (value, setter) => {
     setPayment(0.0);
+    setErrorMessage("");
     setter(value);
   };
 
   const validateInputs = () => {
-    if (
-      propertyPrice &&
-      propertyPrice > 0 &&
-      downPayment &&
-      downPayment > 0 &&
-      annualInterestRate &&
-      annualInterestRate > 0
-    )
-      return true;
+    if (!propertyPrice || propertyPrice <= 0) {
+      setErrorMessage("Invalid property price");
+      return false;
+    }
 
-    return false;
+    if (!downPayment || downPayment <= 0) {
+      setErrorMessage("Invalid initial payment");
+      return false;
+    }
+
+    if (!annualInterestRate || annualInterestRate <= 0) {
+      setErrorMessage("Invalid annual interest");
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async () => {
@@ -53,13 +62,23 @@ function App() {
         );
         setPayment(response.data.paymentPerSchedule);
       } catch (error) {
-        alert(error.response.data.error);
+        if (error.response.data.fields) {
+          setErrorMessage(
+            error.response.data.fields.map((field) => `${field.error}\n`)
+          );
+        } else {
+          setErrorMessage(error.response.data.error);
+        }
       }
     }
   };
 
   return (
     <div className="App">
+      <Snackbar open={!!errorMessage} autoHideDuration={6000}>
+        <Alert severity="error">{errorMessage}</Alert>
+      </Snackbar>
+
       <Grid container sx={{ alignItems: "center", height: "100vh" }}>
         <Grid container item sm={12} sx={{ justifyContent: "center" }}>
           <Typography variant="h1">
